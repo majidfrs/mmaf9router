@@ -77,8 +77,8 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
 # نصب curl و su-exec در کانتینر
 RUN apk add --no-cache su-exec curl && \
   printf '#!/bin/sh\n\
-mkdir -p /app/data\n\
-if [ ! -f /app/data/data.sqlite ]; then\n  curl -L "https://ahodjrqxfrtqqbformju.supabase.co/storage/v1/object/public/man/data.sqlite" -o /app/data/data.sqlite\nfi\n\
+mkdir -p /app/data/db\n\
+if [ ! -f /app/data/db/data.sqlite ]; then\n  curl -L "https://ahodjrqxfrtqqbformju.supabase.co/storage/v1/object/public/man/data.sqlite" -o /app/data/db/data.sqlite\nfi\n\
 chown -R node:node /app/data /data/app_data /data/data-home 2>/dev/null\n\
 exec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh

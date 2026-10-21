@@ -74,8 +74,13 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
 
 # Avoid a full distribution upgrade in the runtime image. It makes builds less
 # reproducible and is unrelated to installing the runtime entrypoint helper.
-RUN apk add --no-cache su-exec && \
-  printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
+# نصب curl و su-exec در کانتینر
+RUN apk add --no-cache su-exec curl && \
+  printf '#!/bin/sh\n\
+mkdir -p /app/data\n\
+if [ ! -f /app/data/data.sqlite ]; then\n  curl -L "لینک_مستقیم_فایل_در_سوپابیس" -o /app/data/data.sqlite\nfi\n\
+chown -R node:node /app/data /data/app_data /data/data-home 2>/dev/null\n\
+exec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 
 EXPOSE 20128

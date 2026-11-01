@@ -43,10 +43,27 @@ export async function createNodeSqliteAdapter(filePath) {
     try { stmtCache.clear(); } catch {}
     try { db.close(); } catch {}
   }
-  const onShutdown = () => gracefulClose();
-  process.once("beforeExit", onShutdown);
-  process.once("SIGINT", () => { onShutdown(); process.exit(0); });
-  process.once("SIGTERM", () => { onShutdown(); process.exit(0); });
+  // Flush the latest cloud snapshot before Render terminates this ephemeral instance.
+  let shutdownStarted = false;
+  async function onShutdown(exitProcess = false) {
+    if (shutdownStarted) return;
+    shutdownStarted = true;
+    clearInterval(checkpointTimer);
+
+    try {
+      const { flushCloudSync } = await import("../cloudSync.js");
+      await flushCloudSync();
+    } catch (error) {
+      console.error("[DB sync] Final shutdown flush failed:", error?.message || error);
+    }
+
+    gracefulClose();
+    if (exitProcess) process.exit(0);
+  }
+
+  process.once("beforeExit", () => { void onShutdown(false); });
+  process.once("SIGINT", () => { void onShutdown(true); });
+  process.once("SIGTERM", () => { void onShutdown(true); });
 
   return {
     driver: "node:sqlite",

@@ -74,14 +74,10 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
 
 # Avoid a full distribution upgrade in the runtime image. It makes builds less
 # reproducible and is unrelated to installing the runtime entrypoint helper.
-# نصب curl و su-exec در کانتینر
-RUN apk add --no-cache su-exec curl && \
-  printf '#!/bin/sh\n\
-mkdir -p /app/data/db\n\
-if [ ! -f /app/data/db/data.sqlite ]; then\n  curl -L "https://ahodjrqxfrtqqbformju.supabase.co/storage/v1/object/public/man/data.sqlite" -o /app/data/db/data.sqlite\nfi\n\
-chown -R node:node /app/data /data/app_data /data/data-home 2>/dev/null\n\
-exec su-exec node "$@"\n' > /entrypoint.sh && \
-  chmod +x /entrypoint.sh
+# Render-specific bootstrap: retry, validate, and atomically install the protected SQLite backup.
+RUN apk add --no-cache su-exec curl
+COPY scripts/render-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 20128
 

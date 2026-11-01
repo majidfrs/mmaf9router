@@ -167,11 +167,19 @@ export function startCloudSync(adapter) {
 
   activeCloudSync = {
     async flush() {
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
+      // Try up to three immediate snapshots so writes that completed during an
+      // in-flight upload are not skipped during a graceful Render shutdown.
+      for (let attempt = 0; attempt < 3 && dirtyVersion > uploadedVersion; attempt += 1) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        await syncOnce();
       }
-      await syncOnce();
+
+      if (dirtyVersion > uploadedVersion) {
+        console.error("[DB sync] Final shutdown snapshot remains pending after 3 attempts");
+      }
     },
   };
 

@@ -10,6 +10,13 @@ const MAX_SNAPSHOT_BYTES = 100 * 1024 * 1024;
 const CRITICAL_TABLES = /\b(settings|providerConnections|providerNodes|proxyPools|apiKeys|combos|kv)\b/i;
 const WRITE_SQL = /^\s*(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|ALTER|DROP|REINDEX|VACUUM|ATTACH|DETACH)\b/i;
 
+let activeCloudSync = null;
+
+export async function flushCloudSync() {
+  if (!activeCloudSync) return;
+  await activeCloudSync.flush();
+}
+
 function isSqlite(bytes) {
   return bytes.length >= 100 &&
     bytes.subarray(0, 15).toString("utf8") === "SQLite format 3";
@@ -157,6 +164,16 @@ export function startCloudSync(adapter) {
   // The repos perform their writes through adapter.run/exec inside transactions.
   // Their wrapper callbacks are synchronous, so the debounce timer runs only
   // after the transaction has committed.
+
+  activeCloudSync = {
+    async flush() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      await syncOnce();
+    },
+  };
 
   console.log("[DB sync] Supabase persistence enabled; configuration writes sync promptly and telemetry is batched");
   markDirty(true); // Persist any migrations/schema updates completed during startup.

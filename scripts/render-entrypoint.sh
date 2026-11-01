@@ -1,11 +1,11 @@
 #!/bin/sh
 set -eu
 
-DATA_DIR="\${DATA_DIR:-/app/data}"
+DATA_DIR="${DATA_DIR:-/app/data}"
 DB_DIR="$DATA_DIR/db"
 DB_FILE="$DB_DIR/data.sqlite"
-DB_DOWNLOAD_URL="\${NINEROUTER_DB_DOWNLOAD_URL:-https://ahodjrqxfrtqqbformju.supabase.co/functions/v1/ninerouter-db-download}"
-DB_DOWNLOAD_TOKEN="\${NINEROUTER_DB_DOWNLOAD_TOKEN:-}"
+DB_DOWNLOAD_URL="${NINEROUTER_DB_DOWNLOAD_URL:-https://ahodjrqxfrtqqbformju.supabase.co/functions/v1/ninerouter-db-download}"
+DB_DOWNLOAD_TOKEN="${NINEROUTER_DB_DOWNLOAD_TOKEN:-}"
 
 mkdir -p "$DB_DIR"
 
@@ -20,7 +20,7 @@ is_valid_sqlite() {
 
 if ! is_valid_sqlite "$DB_FILE"; then
   if [ -e "$DB_FILE" ]; then
-    invalid_backup="\${DB_FILE}.invalid.$(date +%s).$$"
+    invalid_backup="${DB_FILE}.invalid.$(date +%s).$$"
     mv "$DB_FILE" "$invalid_backup"
     echo "[DB bootstrap] Invalid existing database preserved as $(basename "$invalid_backup")"
   fi
@@ -30,7 +30,7 @@ if ! is_valid_sqlite "$DB_FILE"; then
     exit 1
   fi
 
-  temp_file="\${DB_FILE}.download.$$"
+  temp_file="${DB_FILE}.download.$$"
   cleanup() { rm -f "$temp_file"; }
   trap cleanup EXIT HUP INT TERM
 
@@ -52,7 +52,7 @@ if ! is_valid_sqlite "$DB_FILE"; then
 
     rm -f "$temp_file"
     if [ "$attempt" -lt 6 ]; then
-      echo "[DB bootstrap] Download failed or response was not a valid SQLite database; retrying in \${delay}s"
+      echo "[DB bootstrap] Download failed or response was not a valid SQLite database; retrying in ${delay}s"
       sleep "$delay"
       delay=$((delay * 2))
     fi
